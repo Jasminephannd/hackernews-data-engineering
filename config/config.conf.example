@@ -1,0 +1,27 @@
+[database]
+database_host = 
+database_port = 
+database_name = 
+database_username = 
+database_password = 
+
+[file_paths]
+input_path = /opt/airflow/data/input
+output_path = /opt/airflow/data/output
+
+[hackernews]
+# Public Algolia HN search API — no API key required.
+# Docs: https://hn.algolia.com/api
+algolia_search_url = https://hn.algolia.com/api/v1/search
+
+[aws]
+aws_access_key_id = 
+aws_secret_access_key = 
+aws_session_token = 
+aws_region = 
+aws_bucket_name = 
+
+[etl_settings]
+batch_size = 100
+error_handling = abort
+log_level = INFO
