@@ -32,7 +32,7 @@ The pipeline performs:
 
 3. **Load**  
    - Store locally as CSV (staging layer)  
-   - Upload to **Amazon S3 (raw layer)**  
+   - Upload to **Amazon S3 (raw layer + logs)**  
 
 4. **AWS Analytics Layer**  
    - AWS Glue → schema + ETL  
@@ -42,7 +42,7 @@ The pipeline performs:
 
 # Architecture
 
-<img width="1600" height="612" alt="image" src="https://github.com/user-attachments/assets/29fe5870-50df-4fc6-ba64-aef7a7cbf2de" />
+<img width="1676" height="640" alt="workflow" src="https://github.com/user-attachments/assets/5638d252-52fd-4373-8576-0dd309b0a811" />
 
 | Tool | What it is | What it does |
 |------|-----------|-------------|
@@ -81,6 +81,7 @@ The pipeline performs:
 - Calls Hacker News API:
 
 https://hn.algolia.com/api/v1/search
+<img width="1715" height="622" alt="airflow_logs" src="https://github.com/user-attachments/assets/f674ae2e-963f-4424-9464-cd4d9a531e2c" />
 
 ## 2. Transformation
 Using Pandas:
@@ -94,17 +95,25 @@ Using Pandas:
 /opt/airflow/data/output/hn_YYYYMMDD.csv
 
 ## 4. Load to S3
-- **Data (CSV):** uploaded to **`s3://<bucket>/raw/`** (credentials via **`[aws]`** in `config/config.conf` and/or an Airflow **Amazon Web Services** connection id such as `aws_default`).
-- **Airflow task logs:** optionally stored under **`s3://<bucket>/logs/`** using the same bucket. In Airflow, create a connection (type **Amazon Web Services**) and point logging’s remote folder at `s3://<bucket>/logs/` so failed runs still have logs in S3 alongside the data.
-- **Teams notifications:** add Airflow **Variable** **`teams_webhook_secret`** with your channel’s **workflow / incoming webhook** URL. **DAG-level** callbacks send **one** message when the run **succeeds** and **one** when it **fails**; failures list **which task(s) failed** plus links to the **DAG run** and the **first failed task’s logs** (`on_success_callback` / `on_failure_callback` on the `@dag` in `dags/hn_dag.py`, see `dags/notifications.py`).
+- **Data (CSV):** uploaded to `s3://<bucket>/raw/`
+- **Airflow task logs:** stored under `s3://<bucket>/logs/` using the same bucket. In Airflow, create a connection (type **Amazon Web Services**) and point logging’s remote folder at `s3://<bucket>/logs/`
+![6](https://github.com/user-attachments/assets/8528d39e-f5c2-4b66-acc2-730f395cf8f1)
+
+- **Teams notifications:** add Airflow Variable teams_webhook_secret with your channel’s workflow / incoming webhook URL. DAG-level callbacks send one message when the run succeeds/fails
+<img width="932" height="651" alt="noti-fail" src="https://github.com/user-attachments/assets/3032763f-b6da-4998-9eb5-b74a0b60e268" />
+<img width="976" height="662" alt="noti-success" src="https://github.com/user-attachments/assets/4060e725-5826-4b11-9465-d053905a7ae1" />
 
 ## 5. AWS Processing
 - Glue:
   - convert CSV → Parquet
   - keep `created_utc` as date only
   - drop unnecessary columns (e.g. `story_text`)
+<img width="1373" height="1103" alt="glue_job" src="https://github.com/user-attachments/assets/b05a3972-a0bb-4e78-8846-bb87e2ecd804" />
+<img width="1684" height="539" alt="s3_bucket" src="https://github.com/user-attachments/assets/4fcade07-d195-41f8-b06e-cc522dcf5015" />
+
 - Athena:
   - query using SQL
+<img width="1663" height="924" alt="athena" src="https://github.com/user-attachments/assets/082f4bb5-7f4a-4a99-a1e8-eb700cc655bb" />
 
 ---
 
