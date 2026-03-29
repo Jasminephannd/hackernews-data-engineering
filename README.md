@@ -96,7 +96,7 @@ Using Pandas:
 ## 4. Load to S3
 - **Data (CSV):** uploaded to **`s3://<bucket>/raw/`** (credentials via **`[aws]`** in `config/config.conf` and/or an Airflow **Amazon Web Services** connection id such as `aws_default`).
 - **Airflow task logs:** optionally stored under **`s3://<bucket>/logs/`** using the same bucket. In Airflow, create a connection (type **Amazon Web Services**) and point logging’s remote folder at `s3://<bucket>/logs/` so failed runs still have logs in S3 alongside the data.
-- **Teams on failure:** add Airflow **Variable** **`flow_webhook`** with your channel’s **workflow / incoming webhook** URL. If any task in the DAG fails, a short notification is sent to that channel (see `dags/notifications.py` and `on_failure_callback` on the DAG).
+- **Teams on failure:** add Airflow **Variable** **`teams_webhook_secret`** with your channel’s **workflow / incoming webhook** URL. If any task in the DAG fails, a short notification is sent to that channel (see `dags/notifications.py` and `on_failure_callback` on the DAG).
 
 ## 5. AWS Processing
 - Glue:
@@ -110,11 +110,15 @@ Using Pandas:
 
 # Configuration
 
-- **`config/config.conf`** (gitignored): AWS block, paths, etc.
-- **Airflow:** Connections and Variables in the UI (see **step 4 — Load to S3** above). Optional runtime tuning lives in **`airflow.env`**.
-- **Connection type for AWS/S3** is **Amazon Web Services** (`aws`), not a separate “S3” row. Rebuild the image after changing **`requirements.txt`** (`docker compose build && docker compose up -d`).
-- **Task logs → S3:** set **`AIRFLOW__LOGGING__REMOTE_LOGGING=True`**, **`AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID`**, and **`AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER=s3://<bucket>/logs/`** (must use **`LOGGING`**, not `CORE`). [S3 task handler](https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/logging/s3-task-handler.html).
-- **Logs in the UI** appear on each **task** after a run (open the run → task → **Logs**).
+- AWS credentials stored in:
+
+config/config.conf (gitignored)
+
+
+- Airflow environment:
+
+airflow.env
+
 
 ---
 
