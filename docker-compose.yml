@@ -1,6 +1,9 @@
 x-airflow-common:
   &airflow-common
   image: custom-airflow:3.1.8-python3.12
+  build:
+    context: .
+    dockerfile: Dockerfile
   user: "50000:0"
   env_file:
     - airflow.env
@@ -45,9 +48,6 @@ services:
   airflow-init:
     <<: *airflow-common
     user: "0:0"
-    build:
-      context: .
-      dockerfile: Dockerfile
     depends_on:
       postgres:
         condition: service_healthy

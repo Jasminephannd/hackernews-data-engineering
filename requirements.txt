@@ -15,6 +15,7 @@ apache-airflow-core==3.1.8
 apache-airflow-providers-common-compat==1.14.1
 apache-airflow-providers-common-io==1.7.1
 apache-airflow-providers-common-sql==1.33.0
+apache-airflow-providers-amazon==9.24.0
 apache-airflow-providers-smtp==2.4.3
 apache-airflow-providers-standard==1.12.1
 apache-airflow-task-sdk==1.1.8

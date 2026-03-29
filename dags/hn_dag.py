@@ -2,48 +2,51 @@ import os
 import sys
 from datetime import datetime
 
-from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import dag, get_current_context, task
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_DAGS = os.path.dirname(os.path.abspath(__file__))
+for _p in (_ROOT, _DAGS):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-from pipelines.aws_s3_pipeline import upload_s3_pipeline
+from notifications import notify_teams
+from pipelines.aws_s3_pipeline import upload_s3_from_path
 from pipelines.hn_pipeline import hackernews_pipeline
 
-default_args = {
-    "owner": "Jasmine Phan",
-    "start_date": datetime(2026, 3, 22),
-}
 
-file_postfix = datetime.now().strftime("%Y%m%d")
-
-dag = DAG(
+@dag(
     dag_id="etl_hackernews_pipeline",
-    default_args=default_args,
+    start_date=datetime(2026, 3, 29),
     schedule="@daily",
     catchup=False,
     tags=["hackernews", "etl", "pipeline", "algolia"],
-)
-
-extract = PythonOperator(
-    task_id="hn_extraction",
-    python_callable=hackernews_pipeline,
-    op_kwargs={
-        "file_name": f"hn_{file_postfix}",
-        "search_query": "data engineering",
-        # Time window for Algolia numericFilters created_at_i (see etls/hn_etl.py _TIME_FILTER_SECONDS).
-        # Options: "hour", "day" (~24h), "week", "month" (~30 days), "year".
-        "time_filter": "month",
-        "limit": 100,
+    default_args={
+        "owner": "Jasmine Phan",
+        "on_failure_callback": notify_teams,
     },
-    dag=dag,
 )
+def etl_hackernews_pipeline():
+    """TaskFlow DAG: @task turns plain functions into operators; return values become XCom."""
 
-# Upload to AWS S3
-upload_to_s3 = PythonOperator(
-    task_id="s3_upload",
-    python_callable=upload_s3_pipeline,
-    dag=dag,
-)
+    @task(task_id="hn_extraction")
+    def extract() -> str:
+        """Runs HN ETL; return value is pushed to XCom for the next task."""
+        ctx = get_current_context()
+        ds = ctx["ds_nodash"]
+        return hackernews_pipeline(
+            file_name=f"hn_{ds}",
+            search_query="data engineering",
+            time_filter="month",
+            limit=100,
+        )
 
-extract >> upload_to_s3
+    @task(task_id="s3_upload")
+    def upload(file_path: str) -> None:
+        """Receives `file_path` from upstream via TaskFlow (XCom)."""
+        upload_s3_from_path(file_path)
+
+    upload(extract())
+
+
+dag = etl_hackernews_pipeline()
