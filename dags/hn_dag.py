@@ -10,7 +10,7 @@ for _p in (_ROOT, _DAGS):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from notifications import notify_teams
+from notifications import notify_teams_dag_failure, notify_teams_dag_success
 from pipelines.aws_s3_pipeline import upload_s3_from_path
 from pipelines.hn_pipeline import hackernews_pipeline
 
@@ -21,10 +21,9 @@ from pipelines.hn_pipeline import hackernews_pipeline
     schedule="@daily",
     catchup=False,
     tags=["hackernews", "etl", "pipeline", "algolia"],
-    default_args={
-        "owner": "Jasmine Phan",
-        "on_failure_callback": notify_teams,
-    },
+    on_success_callback=notify_teams_dag_success,
+    on_failure_callback=notify_teams_dag_failure,
+    default_args={"owner": "Jasmine Phan"},
 )
 def etl_hackernews_pipeline():
     """TaskFlow DAG: @task turns plain functions into operators; return values become XCom."""

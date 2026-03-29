@@ -96,7 +96,7 @@ Using Pandas:
 ## 4. Load to S3
 - **Data (CSV):** uploaded to **`s3://<bucket>/raw/`** (credentials via **`[aws]`** in `config/config.conf` and/or an Airflow **Amazon Web Services** connection id such as `aws_default`).
 - **Airflow task logs:** optionally stored under **`s3://<bucket>/logs/`** using the same bucket. In Airflow, create a connection (type **Amazon Web Services**) and point logging’s remote folder at `s3://<bucket>/logs/` so failed runs still have logs in S3 alongside the data.
-- **Teams on failure:** add Airflow **Variable** **`teams_webhook_secret`** with your channel’s **workflow / incoming webhook** URL. If any task in the DAG fails, a short notification is sent to that channel (see `dags/notifications.py` and `on_failure_callback` on the DAG).
+- **Teams notifications:** add Airflow **Variable** **`teams_webhook_secret`** with your channel’s **workflow / incoming webhook** URL. **DAG-level** callbacks send **one** message when the run **succeeds** and **one** when it **fails**; failures list **which task(s) failed** plus links to the **DAG run** and the **first failed task’s logs** (`on_success_callback` / `on_failure_callback` on the `@dag` in `dags/hn_dag.py`, see `dags/notifications.py`).
 
 ## 5. AWS Processing
 - Glue:
